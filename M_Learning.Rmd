@@ -1,0 +1,103 @@
+---
+title: "M_Learning Class Project"
+author: "Carey Worth"
+date: "June 26, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+##Imports
+
+library(caret)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+
+# setting the overall seed for reproduceability
+set.seed(1234)
+
+## Load data
+
+trainingset <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",na.strings=c("NA","#DIV/0!", ""))
+
+# Loading the testing data set 
+testingset <- read.csv('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv', na.strings=c("NA","#DIV/0!", ""))
+
+#Check Dim
+dim(trainingset)
+dim(testingset)
+
+##Clean up data
+trainingset<-trainingset[,colSums(is.na(trainingset)) == 0]
+testingset <-testingset[,colSums(is.na(testingset)) == 0]
+
+
+```
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+
+```{r cars}
+trainingset   <-trainingset[,-c(1:7)]
+testingset <-testingset[,-c(1:7)]
+
+dim(trainingset)
+dim(testingset)
+head(trainingset)
+head(testingset)
+
+subsamples <- createDataPartition(y=trainingset$classe, p=0.75, list=FALSE)
+subTraining <- trainingset[subsamples, ] 
+subTesting <- trainingset[-subsamples, ]
+dim(subTraining)
+dim(subTesting)
+head(subTraining)
+head(subTesting)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(subTraining$classe, col="blue", main="Bar Plot of levels of the variable classe within the subTraining data set", xlab="classe levels", ylab="Frequency")
+```
+
+## Predict models
+
+```{r }
+
+model1 <- rpart(classe ~ ., data=subTraining, method="class")
+# Predicting:
+predictionDT <- predict(model1, subTesting, type = "class")
+# Plot of the Decision Tree
+rpart.plot(model1, main="Classification Tree", extra=102, under=TRUE, faclen=0)
+```
+
+## Test model result on test data
+
+```{r }
+
+confusionMatrix(predictionDT, subTesting$classe)
+```
+
+## Next Test model result on test data using RF
+
+```{r }
+
+model2 <- randomForest(classe ~. , data=subTraining, method="class")
+# Predicting:
+predictionRF <- predict(model2, subTesting, type = "class")
+# Test results on subTesting data set:
+confusionMatrix(predictionRF, subTesting$classe)
+
+final_prediction <- predict(model2, testingset, type="class")
+final_prediction
+
+
+
+```
